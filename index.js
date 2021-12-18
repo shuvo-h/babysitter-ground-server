@@ -28,6 +28,7 @@ async function run(){
         const parentsCollection = database.collection("Parents");
         const sittersCollection = database.collection("Sitters");
         const bookingCollection = database.collection("Bookings");
+        const teamMemberCollection = database.collection("TeamMembers");
         
         // GET API (to get all services)
         app.get("/services", async(req,res)=>{
@@ -88,7 +89,6 @@ async function run(){
             const cursor = sittersCollection.find(query);
             const allSitters = await cursor.toArray();
             res.json(allSitters);
-            console.log(allSitters);
         })
 
         // POST API (to insert a new sitter)
@@ -129,6 +129,14 @@ async function run(){
             const bookingInfo = req.body;
             const result = await bookingCollection.insertOne(bookingInfo);
             res.json(result)
+        })
+
+        // GET API (to get all team members)
+        app.get("/teamMembers", async(req,res)=>{
+            const query = {};
+            const cursor = teamMemberCollection.find(query);
+            const allMembers = await cursor.toArray();
+            res.json(allMembers);
         })
 
     }finally{
