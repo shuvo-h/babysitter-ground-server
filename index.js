@@ -6,6 +6,10 @@ const ObjectId = require('mongodb').ObjectId;
 const { all } = require('express/lib/application');
 require('dotenv').config();
 
+const stripe = require("stripe")('sk_test_51JvkxdG4X8YjniOp7MII0fze13d04jXWWLpuFePeTrNTMUlx4epwekqrNBTN8ktbM0lU9rhKbbtC1i2JWhd3fnAE00i7a1CHd2');
+// const stripe = require("stripe")(process.env.STRIPE_SECRET);
+// console.log(`${process.env.STRIPE_SECRET}`);
+
 // app and port 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -104,7 +108,6 @@ async function run(){
             const query = {_id: ObjectId(sitterID)};
             const result = await sittersCollection.deleteOne(query);
             res.json(result);
-            console.log(result);
         })
 
          // GET API (to get all booking)
@@ -113,7 +116,6 @@ async function run(){
             const cursor = bookingCollection.find(query)
             const allBooking = await cursor.toArray();
             res.json(allBooking)
-            console.log(allBooking);
         })
         
          // POST API (to get parent specifiq booking list)
@@ -131,6 +133,25 @@ async function run(){
             res.json(result)
         })
 
+        // DELETE API (to delete a booking by id)
+        app.delete("/booking/:bookingId", async(req,res)=>{
+            const bookingID = req.params.bookingId;
+            const query = {_id: ObjectId(bookingID)};
+            const result = await bookingCollection.deleteOne(query);
+            res.json(result);
+        })
+        
+        // update payment status and add payment info to booking 
+        app.put("/booking",async(req,res)=>{
+            const paymentInfo = req.body;
+            const filterBookingID = {_id: ObjectId(paymentInfo.bookingId)};
+            
+            const options = { upsert: true };
+            const updateDoc = { $set: paymentInfo};
+            const result = await bookingCollection.updateOne(filterBookingID, updateDoc, options);
+            res.json(result);
+        })
+
         // GET API (to get all team members)
         app.get("/teamMembers", async(req,res)=>{
             const query = {};
@@ -138,6 +159,24 @@ async function run(){
             const allMembers = await cursor.toArray();
             res.json(allMembers);
         })
+
+        // payment API 
+        app.post("/create-payment-intent", async (req, res) => {
+            const paymentInfo = req.body;
+            const amount = paymentInfo.price*100;
+            
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"]
+                // automatic_payment_methods: {
+                //     enabled: true,
+                // },
+            });
+        
+            res.json({clientSecret: paymentIntent.client_secret,});
+        });
 
     }finally{
         // await client.close();
