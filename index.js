@@ -33,6 +33,7 @@ async function run(){
         const sittersCollection = database.collection("Sitters");
         const bookingCollection = database.collection("Bookings");
         const teamMemberCollection = database.collection("TeamMembers");
+        const blogCollection = database.collection("Blogs");
         
         // GET API (to get all services)
         app.get("/services", async(req,res)=>{
@@ -177,6 +178,18 @@ async function run(){
         
             res.json({clientSecret: paymentIntent.client_secret,});
         });
+
+        app.get("/blogs", async(req,res)=>{
+            const blogs = blogCollection.find({});
+            const allbblogs = await blogs.toArray()
+            res.json(allbblogs)
+        })
+        app.post("/addBlog", async(req,res)=>{
+            const blogInfo = req.body;
+            const result = await blogCollection.insertOne(blogInfo);
+            res.json(result)
+        })
+        
 
     }finally{
         // await client.close();
